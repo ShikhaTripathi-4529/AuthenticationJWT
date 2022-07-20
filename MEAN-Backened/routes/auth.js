@@ -1,11 +1,11 @@
 "use strict";
 const router = require("express").Router();
-
 const User = require("../Model/User");
 const userController = require("../controller/user-controller");
 const AuthToken = require("../Model/token");
 const jwt = require("jsonwebtoken");
-
+const mail = require("../utility/send-Email");
+const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const {
   validatePostUser,
@@ -156,13 +156,14 @@ router.get("/forget-password", (req, res, next) => {
   res.render("forget-password.ejs");
 });
 
-router.post("/forget-password", async (req, res) => {
+router.post("/forget-password", async (req, res, next) => {
   try {
     const { email } = req.body;
+
     if (email) {
       const user = await User.findOne({ email: email });
       if (!user) {
-        res.send({
+        return res.send({
           status: "failed",
           message: "Email doesn't exist ",
         });
@@ -175,10 +176,33 @@ router.post("/forget-password", async (req, res) => {
         const token = jwt.sign(payload, secret, { expiresIn: "15m" });
         const resetLink = `http://127.0.0.1:8000/api/user/reset-password/${user._id}/${token}`;
         console.log(resetLink);
-        res.json({
-          status: "success",
-          message: "password reset-email sent .....Please check your Email ",
+        let mailSend = await mail.send({
+          email: email,
+          subject: "Password reset link",
+          html: `Dear , <br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; A request has been received to change the password for your account and this link is valid upto <b>5 minutes</>.<br><br><br>
+           <center> <a href="${resetLink}"
+              style="border: 0;
+              background: #9EA8F5;
+              color: #FFFFFF;
+              text-decoration: none;
+              padding: 0.25rem 1.5rem;
+              cursor: pointer;" >Reset Password</a></center><br><br>
+              if you didn't request a password reset, you can ignore this email. Your password will not be changed.<br><br><br>
+              <center><small>The MAiltrap Team.</small></center>`,
         });
+        console.log({ mailSend });
+        if (mailSend) {
+          res.json({
+            status: "success",
+            message: "password reset-email sent .....Please check your Email ",
+            info,
+          });
+        } else {
+          res.json({
+            status: "failed",
+            message: " mail not send there is some erorr ",
+          });
+        }
       }
     } else {
       res.json({

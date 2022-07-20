@@ -1,28 +1,34 @@
+const dotenv = require("dotenv");
+
 const nodemailer = require("nodemailer");
 
-module.exports = async function () {
-  let transport = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USERNAME,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
+dotenv.config({ path: "./routes/.env" });
 
-  const mailOptions = {
-    from: "1816510119@kit.ac.in", // Sender address
-    to: "shikhatripathi22101@gmail.com", // List of recipients
-    subject: "Node Mailer", // Subject line
-    text: "Hello People!, I am implememting nodemailer !", // Plain text body
-  };
+module.exports = {
+  send: async (data) => {
+    var transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.EMAIL_USERNAME, // ADMIN GMAIL ID
+        pass: process.env.EMAIL_PASSWORD, // ADMIN GMAIL PASSWORD
+      },
+    });
 
-  transport.sendMail(mailOptions, function (err, info) {
-    if (err) {
-      console.log(err);
-    } else {
-      console.log(info);
-    }
-  });
+    const mailOptions = {
+      from: data.EMAIL_USERNAME, // Sender address
+      to: data.email, // List of recipients
+      subject: data.subject, // Subject line
+      html: data.html, // Plain text body
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.log("error is " + error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    });
+  },
 };
